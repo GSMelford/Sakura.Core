@@ -1,0 +1,46 @@
+#!groovy
+
+pipeline {
+    agent any
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        CONTAINER_NAME = "sakura.core"
+        DOCKER_CONTAINER_TAG = "latest"
+        DOCKER_REPO = "gsmelford"
+        PORT = "5667"
+    }
+
+    stages {
+        stage("Build docker image") {
+            steps {
+                script {
+                    echo "=== building image ==="
+                    sh "docker build -t $DOCKER_REPO/$CONTAINER_NAME:$DOCKER_CONTAINER_TAG ."
+                }
+            }
+        }
+        stage("Push docker image") {
+            steps {
+                echo "=== pushing image ==="
+                sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                sh "docker push $DOCKER_REPO/$CONTAINER_NAME:$DOCKER_CONTAINER_TAG"
+            }
+        }
+        stage("Clear docker container") {
+            steps {
+                echo "=== removing old container ==="
+                sh "docker rm -f $CONTAINER_NAME && echo \"Container $CONTAINER_NAME removed\" || echo \"Container $CONTAINER_NAME does not exist\""
+            }
+        }
+        stage("Run docker container") {
+            steps {
+                echo "=== running new image ==="
+                sh "docker run --restart=always -d --name $CONTAINER_NAME -p $PORT:80 -it $DOCKER_REPO/$CONTAINER_NAME:$DOCKER_CONTAINER_TAG"
+            }
+        }
+    }
+}
