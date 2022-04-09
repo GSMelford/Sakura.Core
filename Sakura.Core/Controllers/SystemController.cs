@@ -15,7 +15,7 @@ public class SystemController : Controller
     [HttpGet("check")]
     public IActionResult CheckSystem()
     {
-        _logger.LogInformation("The Sakura system works");
+        _logger.LogInformation("The Sakura system works good");
         return Ok();
     }
 }
